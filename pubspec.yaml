@@ -1,7 +1,8 @@
 name: learmond
-description: A sample command-line application.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: The Learmond Corporation's official flutter package.
+version: 0.0.0
+homepage: https://thelearmondcorporation.com
+repository: https://github.com/thelearmondcorporation/learmond
 
 environment:
   sdk: ^3.10.4

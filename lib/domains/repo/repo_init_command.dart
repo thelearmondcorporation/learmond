@@ -11,7 +11,8 @@ class RepoInitCommand extends Command {
   final name = 'init';
 
   @override
-  final description = 'Initialize a GitHub repository for the current directory';
+  final description =
+      'Initialize a GitHub repository for the current directory';
 
   RepoInitCommand(this.context);
 
@@ -26,17 +27,14 @@ class RepoInitCommand extends Command {
     await _run('git', ['commit', '-m', 'Initial commit']);
 
     logger.info('Creating GitHub repository ${context.org}/$name');
-    await _run(
-      'gh',
-      [
-        'repo',
-        'create',
-        '${context.org}/$name',
-        '--public',
-        '--source=.',
-        '--remote=origin',
-      ],
-    );
+    await _run('gh', [
+      'repo',
+      'create',
+      '${context.org}/$name',
+      '--public',
+      '--source=.',
+      '--remote=origin',
+    ]);
 
     logger.success('Repository ready: ${context.org}/$name');
   }
