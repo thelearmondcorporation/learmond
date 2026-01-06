@@ -1,5 +1,5 @@
 name: learmond
-description: The Learmond Corporation's official flutter package.
+description: The Learmond Corporation's CLI tool.
 version: 0.0.1
 homepage: https://thelearmondcorporation.com/learmond
 repository: https://github.com/thelearmondcorporation/learmond.git

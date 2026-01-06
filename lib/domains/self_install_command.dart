@@ -63,7 +63,10 @@ class SelfInstallCommand extends Command {
         stderr.writeln('Failed to copy binary to Homebrew tap folder: $e');
         exit(1);
       }
+    }
 
+    // Compute SHA256 checksum and update formula if tap folder exists
+    if (await tapDir.exists()) {
       logger.info('Computing SHA256 checksum for the binary...');
       String sha256Hex;
       try {
