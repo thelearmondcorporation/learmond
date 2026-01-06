@@ -93,22 +93,7 @@ class SelfInstallCommand extends Command {
           stderr.writeln('Failed to update learmond.rb formula file: $e');
           exit(1);
         }
-      } else {
-        logger.info('Formula file learmond.rb not found in Homebrew tap folder, skipping formula update.');
       }
-
-      // Delete the binary from the tap folder
-      try {
-        final fileToDelete = File('${tapDir.path}/$exeName');
-        if (await fileToDelete.exists()) {
-          await fileToDelete.delete();
-        }
-      } catch (e) {
-        stderr.writeln('Failed to delete binary from Homebrew tap folder: $e');
-        exit(1);
-      }
-    } else {
-      logger.info('Homebrew tap folder not found at $tapDir, skipping copy and SHA256 computation.');
     }
 
     logger.success(
