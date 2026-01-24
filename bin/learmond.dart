@@ -14,6 +14,11 @@ import 'package:learmond/domains/analyze/analyze_command.dart';
 import 'package:learmond/domains/changelog/changelog_command.dart';
 import 'package:learmond/domains/push/github_push_command.dart';
 import 'package:learmond/domains/publish/publish_command.dart';
+import 'package:learmond/domains/run/run_command.dart';
+import 'package:learmond/domains/license/license_cli_command.dart';
+import 'package:learmond/domains/fix/fix_command.dart';
+
+import 'package:learmond/domains/podman/podman_command.dart';
 
 void main(List<String> args) async {
   final context = Context.defaultContext();
@@ -35,7 +40,12 @@ void main(List<String> args) async {
       ..addCommand(AnalyzeCommand())
       ..addCommand(ChangelogCommand())
       ..addCommand(GithubPushCommand())
-      ..addCommand(PublishCommand());
+      ..addCommand(LicenseCliCommand())
+      ..addCommand(PublishCommand())
+      ..addCommand(RunCommand())
+      ..addCommand(FixCommand())
+      //PODMAN COMMANDS
+      ..addCommand(PodmanCommand());
   } catch (e, st) {
     print('Failed to initialize CLI commands: $e');
     print('Did you add the new imports for the command in bin/learmond.dart?');

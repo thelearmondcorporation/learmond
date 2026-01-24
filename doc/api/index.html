@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="learmond API docs, for the Dart programming language.">
+  <title>learmond - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/thelearmondcorporation/learmond">learmond package</a></li>
+  </ol>
+  <div class="self-name">learmond</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h2 id="learmond">Learmond</h2>
+<p>The Learmond Corporation's official CLI tool.</p>
+<h2 id="includes">Includes</h2>
+<ul>
+<li><code>learmond_flutter</code>
+<ul>
+<li><code>lpe_sdk</code></li>
+<li><code>source_sdk</code></li>
+<li><code>lpe</code></li>
+<li><code>lpe_with_source</code></li>
+<li><code>paysheet</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="commands">Commands</h3>
+<ul>
+<li><code>learmond install</code> – Compile the CLI and install it to your workspace.</li>
+<li><code>learmond doctor</code> – Check your environment for required tools and setup.</li>
+<li><code>learmond repo</code> – Initialize and manage a git repository.</li>
+<li><code>learmond create</code> – Create a new project for Flutter, React Native, Ruby, or NPM and move into the project directory.</li>
+<li><code>learmond format</code> – Run formatting and linting based on the project type.</li>
+<li><code>learmond analyze</code> – Run static analysis on the current project (Flutter, Dart, React Native, NPM, Ruby).</li>
+<li><code>learmond test</code> – Run tests for the detected project type.</li>
+<li><code>learmond changelog</code> – Generate or update the project <code>CHANGELOG.md</code> and <code>README.md</code>.</li>
+<li><code>learmond license</code> - Generate or update the project <code>LICENSE</code>. Supports <code>MIT</code>, <code>APACHE</code>, <code>GNU</code>.</li>
+<li><code>learmond build</code> – Build project APK or AppBundle.</li>
+<li><code>learmond push</code> – Stage, commit, and push changes to the current branch on origin.</li>
+<li><code>learmond publish</code> – Run preflight checks and publish the project (if you intend to publish, supports pub.dev, npm, or RubyGems).</li>
+</ul>
+<h2 id="install-via-homebrew-macos-">Install via Homebrew (macOS) 🔧</h2>
+<p>You can install <code>learmond</code> via Homebrew using the provided Homebrew tap or directly from the formula in this repository.</p>
+<ul>
+<li>Tap and install from the public GitHub tap:</li>
+</ul>
+<pre class="language-bash"><code class="language-bash">brew tap thelearmondcorporation/homebrew-learmond https://github.com/thelearmondcorporation/homebrew-learmond
+brew install learmond
+</code></pre>
+<ul>
+<li>Or install directly (single-line) from the tap without tapping first:</li>
+</ul>
+<pre class="language-bash"><code class="language-bash">brew install thelearmondcorporation/homebrew-learmond/learmond
+</code></pre>
+<ul>
+<li>Update or upgrade:</li>
+</ul>
+<pre class="language-bash"><code class="language-bash">brew update
+brew upgrade learmond
+</code></pre>
+<p>Note: The tap's formula is located in <code>homebrew-learmond/learmond.rb</code> in this repository.</p>
+<h2 id="examples">Examples</h2>
+<p>See the <code>example/</code> folder for a runnable Dart example that demonstrates how to import <code>package:learmond/learmond.dart</code> and call its APIs.</p>
+<pre class="language-bash"><code class="language-bash"># Resolve dependencies (use Flutter where Flutter SDK is required)
+flutter pub get
+
+# Run the example executable from the project root
+dart run example:main
+</code></pre>
+<h2 id="license">LICENSE</h2>
+<p>MIT</p>
+<h2 id="author">Author</h2>
+<p>The Learmond Corporation</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="context">
+  <span class="name"><a href="core_context/">core/context</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="logger">
+  <span class="name"><a href="core_logger/">core/logger</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="analyze_command">
+  <span class="name"><a href="domains_analyze_analyze_command/">domains/analyze/analyze_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="changelog_command">
+  <span class="name"><a href="domains_changelog_changelog_command/">domains/changelog/changelog_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="clean_command">
+  <span class="name"><a href="domains_clean_clean_command/">domains/clean/clean_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="create_command">
+  <span class="name"><a href="domains_create_create_command/">domains/create/create_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="doctor_command">
+  <span class="name"><a href="domains_doctor_doctor_command/">domains/doctor/doctor_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="fix_command">
+  <span class="name"><a href="domains_fix_fix_command/">domains/fix/fix_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="build_apk_command">
+  <span class="name"><a href="domains_flutter_build_apk_command/">domains/flutter/build_apk_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="build_appbundle_command">
+  <span class="name"><a href="domains_flutter_build_appbundle_command/">domains/flutter/build_appbundle_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="build_command">
+  <span class="name"><a href="domains_flutter_build_command/">domains/flutter/build_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="flutter_command">
+  <span class="name"><a href="domains_flutter_flutter_command/">domains/flutter/flutter_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="format_command">
+  <span class="name"><a href="domains_format_format_command/">domains/format/format_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="license_cli_command">
+  <span class="name"><a href="domains_license_license_cli_command/">domains/license/license_cli_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="license_command">
+  <span class="name"><a href="domains_license_license_command/">domains/license/license_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="publish_command">
+  <span class="name"><a href="domains_publish_publish_command/">domains/publish/publish_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="github_push_command">
+  <span class="name"><a href="domains_push_github_push_command/">domains/push/github_push_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="repo_command">
+  <span class="name"><a href="domains_repo_repo_command/">domains/repo/repo_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="repo_init_command">
+  <span class="name"><a href="domains_repo_repo_init_command/">domains/repo/repo_init_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="run_command">
+  <span class="name"><a href="domains_run_run_command/">domains/run/run_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="self_install_command">
+  <span class="name"><a href="domains_self_install_command/">domains/self_install_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="test_command">
+  <span class="name"><a href="domains_test_test_command/">domains/test/test_command</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="learmond">
+  <span class="name"><a href="learmond/">learmond</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/thelearmondcorporation/learmond">learmond package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">learmond</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="core_context/">core/context</a></li>
+      <li><a href="core_logger/">core/logger</a></li>
+      <li><a href="domains_analyze_analyze_command/">domains/analyze/analyze_command</a></li>
+      <li><a href="domains_changelog_changelog_command/">domains/changelog/changelog_command</a></li>
+      <li><a href="domains_clean_clean_command/">domains/clean/clean_command</a></li>
+      <li><a href="domains_create_create_command/">domains/create/create_command</a></li>
+      <li><a href="domains_doctor_doctor_command/">domains/doctor/doctor_command</a></li>
+      <li><a href="domains_fix_fix_command/">domains/fix/fix_command</a></li>
+      <li><a href="domains_flutter_build_apk_command/">domains/flutter/build_apk_command</a></li>
+      <li><a href="domains_flutter_build_appbundle_command/">domains/flutter/build_appbundle_command</a></li>
+      <li><a href="domains_flutter_build_command/">domains/flutter/build_command</a></li>
+      <li><a href="domains_flutter_flutter_command/">domains/flutter/flutter_command</a></li>
+      <li><a href="domains_format_format_command/">domains/format/format_command</a></li>
+      <li><a href="domains_license_license_cli_command/">domains/license/license_cli_command</a></li>
+      <li><a href="domains_license_license_command/">domains/license/license_command</a></li>
+      <li><a href="domains_publish_publish_command/">domains/publish/publish_command</a></li>
+      <li><a href="domains_push_github_push_command/">domains/push/github_push_command</a></li>
+      <li><a href="domains_repo_repo_command/">domains/repo/repo_command</a></li>
+      <li><a href="domains_repo_repo_init_command/">domains/repo/repo_init_command</a></li>
+      <li><a href="domains_run_run_command/">domains/run/run_command</a></li>
+      <li><a href="domains_self_install_command/">domains/self_install_command</a></li>
+      <li><a href="domains_test_test_command/">domains/test/test_command</a></li>
+      <li><a href="learmond/">learmond</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    learmond
+      0.0.1+4
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

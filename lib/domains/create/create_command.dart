@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:args/command_runner.dart';
 
 class CreateCommand extends Command {
@@ -26,7 +27,7 @@ class CreateCommand extends Command {
         allowed: ['flutter', 'react-native', 'ruby', 'npm'],
         defaultsTo: 'flutter',
         help:
-            'Specify the type of project to create: flutter, react-native, ruby, npm.',
+          'Specify the type of project to create: flutter, react-native (uses Expo, includes web), ruby, npm.',
       )
       ..addFlag(
         'cd',
@@ -69,18 +70,47 @@ class CreateCommand extends Command {
 
       print('\nFlutter project "$name" created successfully.');
     } else if (type == 'react-native') {
-      print('Running: npx react-native init $name');
-      final result = await Process.run('npx', ['react-native', 'init', name]);
+      // Use Expo to create a React Native project; Expo includes web support by default.
+      print('Running: npx create-expo-app $name');
+      final result = await Process.run('npx', ['create-expo-app', name]);
 
       stdout.write(result.stdout);
       stderr.write(result.stderr);
 
       if (result.exitCode != 0) {
-        print('React Native create failed with exit code ${result.exitCode}');
+        print('Expo create failed with exit code ${result.exitCode}');
         exit(result.exitCode);
       }
 
-      print('\nReact Native project "$name" created successfully.');
+      // Ensure dependencies are installed (safe no-op if already done by the tool).
+      print('Ensuring dependencies are installed in $name...');
+      final installResult = await Process.run('npm', ['install'], workingDirectory: name);
+      stdout.write(installResult.stdout);
+      stderr.write(installResult.stderr);
+      if (installResult.exitCode != 0) {
+        print('npm install failed with exit code ${installResult.exitCode}');
+        // don't exit; project was created, but warn the user
+      }
+
+      // Update package.json scripts to include convenient web/start scripts.
+      try {
+        final pkgFile = File('$name/package.json');
+        if (await pkgFile.exists()) {
+          final content = await pkgFile.readAsString();
+          final data = jsonDecode(content) as Map<String, dynamic>;
+          final scripts = (data['scripts'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+          scripts.putIfAbsent('web', () => 'expo start --web');
+          scripts.putIfAbsent('start', () => 'expo start');
+          data['scripts'] = scripts;
+          final encoder = JsonEncoder.withIndent('  ');
+          await pkgFile.writeAsString(encoder.convert(data));
+          print('Added npm scripts: "web" and "start" to package.json');
+        }
+      } catch (e) {
+        print('Warning: failed to update package.json scripts: $e');
+      }
+
+      print('\nExpo project "$name" created successfully with web support.');
     } else if (type == 'ruby') {
       print('Running: bundle gem $name');
       final result = await Process.run('bundle', ['gem', name]);
@@ -130,7 +160,8 @@ class CreateCommand extends Command {
         print('  flutter pub get');
       } else if (type == 'react-native') {
         print('  npm install');
-        print('  npx react-native run-android # or run-ios');
+        print('  npx expo start --web # start web dev server');
+        print('  npx expo start # start dev server for all platforms');
       } else if (type == 'ruby') {
         print('  bundle install');
       } else if (type == 'npm') {

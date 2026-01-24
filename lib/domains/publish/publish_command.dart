@@ -22,6 +22,7 @@ class PublishCommand extends Command {
   Future<void> run() async {
     final isDryRun = argResults?['dry-run'] == true;
     final steps = [
+      ['learmond', 'fix'],
       ['learmond', 'analyze'],
       ['learmond', 'test'],
       ['learmond', 'format'],

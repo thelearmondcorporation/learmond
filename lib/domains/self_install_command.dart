@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import '../core/logger.dart';
 
 class SelfInstallCommand extends Command {
@@ -51,7 +50,9 @@ class SelfInstallCommand extends Command {
     }
 
     // Determine homebrew tap path
-    final tapPath = Platform.environment['LEARMOND_TAP_PATH'] ?? '${Directory.current.path}/homebrew-learmond';
+    final tapPath =
+        Platform.environment['LEARMOND_TAP_PATH'] ??
+        '${Directory.current.path}/homebrew-learmond';
     final tapDir = Directory(tapPath);
     if (await tapDir.exists()) {
       logger.info('Copying binary to Homebrew tap folder at $tapDir...');

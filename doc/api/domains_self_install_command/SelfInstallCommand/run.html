@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the run method from the SelfInstallCommand class, for the Dart programming language.">
+  <title>run method - SelfInstallCommand class - self_install_command library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">learmond</a></li>
+    <li><a href="../../domains_self_install_command/">domains&#47;self_install_command.dart</a></li>
+    <li><a href="../../domains_self_install_command/SelfInstallCommand-class.html">SelfInstallCommand</a></li>
+    <li class="self-crumb">run method</li>
+  </ol>
+  <div class="self-name">run</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="domains_self_install_command&#47;SelfInstallCommand-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">run</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name ">run</span>(<wbr>)
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Runs this command.</p>
+<p>The return value is wrapped in a <code>Future</code> if necessary and returned by
+<a href="https://pub.dev/documentation/args/2.7.0/command_runner/CommandRunner/runCommand.html">CommandRunner.runCommand</a>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+Future&lt;void&gt; run() async {
+  final exeName = &#39;learmond&#39;;
+  final exePath = &#39;${Directory.current.path}&#47;bin&#47;learmond.dart&#39;;
+
+  logger.info(&#39;Running dart pub get...&#39;);
+  final pubGet = await Process.run(&#39;dart&#39;, [&#39;pub&#39;, &#39;get&#39;], runInShell: true);
+
+  if (pubGet.exitCode != 0) {
+    stderr.write(pubGet.stderr);
+    exit(pubGet.exitCode);
+  }
+
+  logger.info(&#39;Compiling Dart CLI...&#39;);
+  final compile = await Process.run(&#39;dart&#39;, [
+    &#39;compile&#39;,
+    &#39;exe&#39;,
+    exePath,
+    &#39;-o&#39;,
+    exeName,
+  ], runInShell: true);
+
+  if (compile.exitCode != 0) {
+    stderr.write(compile.stderr);
+    exit(compile.exitCode);
+  }
+
+  logger.info(&#39;Moving binary to &#47;usr&#47;local&#47;bin (requires sudo)...&#39;);
+  final move = await Process.run(&#39;sudo&#39;, [
+    &#39;mv&#39;,
+    exeName,
+    &#39;&#47;usr&#47;local&#47;bin&#47;&#39;,
+  ], runInShell: true);
+
+  if (move.exitCode != 0) {
+    stderr.write(move.stderr);
+    exit(move.exitCode);
+  }
+
+  &#47;&#47; Determine homebrew tap path
+  final tapPath =
+      Platform.environment[&#39;LEARMOND_TAP_PATH&#39;] ??
+      &#39;${Directory.current.path}&#47;homebrew-learmond&#39;;
+  final tapDir = Directory(tapPath);
+  if (await tapDir.exists()) {
+    logger.info(&#39;Copying binary to Homebrew tap folder at $tapDir...&#39;);
+    try {
+      final sourceFile = File(&#39;&#47;usr&#47;local&#47;bin&#47;$exeName&#39;);
+      final destFile = File(&#39;${tapDir.path}&#47;$exeName&#39;);
+      await sourceFile.copy(destFile.path);
+    } catch (e) {
+      stderr.writeln(&#39;Failed to copy binary to Homebrew tap folder: $e&#39;);
+      exit(1);
+    }
+  }
+
+  &#47;&#47; Compute SHA256 checksum and update formula if tap folder exists
+  if (await tapDir.exists()) {
+    logger.info(&#39;Computing SHA256 checksum for the binary...&#39;);
+    String sha256Hex;
+    try {
+      final binaryBytes = await File(&#39;${tapDir.path}&#47;$exeName&#39;).readAsBytes();
+      final sha256Digest = sha256.convert(binaryBytes);
+      sha256Hex = sha256Digest.toString();
+      logger.info(&#39;SHA256: $sha256Hex&#39;);
+    } catch (e) {
+      stderr.writeln(&#39;Failed to compute SHA256 checksum: $e&#39;);
+      exit(1);
+    }
+
+    &#47;&#47; Update learmond.rb formula file with new SHA256
+    final formulaFile = File(&#39;${tapDir.path}&#47;learmond.rb&#39;);
+    if (await formulaFile.exists()) {
+      try {
+        final lines = await formulaFile.readAsLines();
+        final updatedLines = lines.map((line) {
+          if (line.trim().startsWith(&#39;sha256 &#39;)) {
+            return &quot;  sha256 &#39;$sha256Hex&#39;&quot;;
+          }
+          return line;
+        }).toList();
+        await formulaFile.writeAsString(updatedLines.join(&#39;\n&#39;));
+        logger.info(&#39;Updated learmond.rb formula with new SHA256 checksum.&#39;);
+      } catch (e) {
+        stderr.writeln(&#39;Failed to update learmond.rb formula file: $e&#39;);
+        exit(1);
+      }
+    }
+  }
+
+  logger.success(
+    &#39;Installed successfully! You can now run `learmond` globally.&#39;,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">learmond</a></li>
+    <li><a href="../../domains_self_install_command/">self_install_command</a></li>
+    <li><a href="../../domains_self_install_command/SelfInstallCommand-class.html">SelfInstallCommand</a></li>
+    <li class="self-crumb">run method</li>
+</ol>
+
+    <h5>SelfInstallCommand class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    learmond
+      0.0.1+4
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

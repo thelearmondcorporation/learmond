@@ -8,7 +8,8 @@ class GithubPushCommand extends Command {
   @override
   final String name = 'push';
   @override
-  final String description = 'Stage, commit, and push changes to the current branch on origin.';
+  final String description =
+      'Stage, commit, and push changes to the current branch on origin.';
 
   GithubPushCommand();
 
@@ -17,17 +18,26 @@ class GithubPushCommand extends Command {
     // 1. Detect git repository
     final isGitRepo = await _isGitRepository();
     if (!isGitRepo) {
-      stderr.writeln('Error: Not a git repository (or any of the parent directories).');
+      stderr.writeln(
+        'Error: Not a git repository (or any of the parent directories).',
+      );
       return;
     }
 
     // 2. Detect changes
     final statusResult = await Process.run('git', ['status', '--porcelain']);
     if (statusResult.exitCode != 0) {
-      stderr.add(statusResult.stderr as List<int>? ?? utf8.encode('Failed to run git status.'));
+      stderr.add(
+        statusResult.stderr as List<int>? ??
+            utf8.encode('Failed to run git status.'),
+      );
       return;
     }
-    final changedLines = (statusResult.stdout as String).trim().split('\n').where((line) => line.isNotEmpty).toList();
+    final changedLines = (statusResult.stdout as String)
+        .trim()
+        .split('\n')
+        .where((line) => line.isNotEmpty)
+        .toList();
     if (changedLines.isEmpty) {
       stdout.writeln('No changes to commit.');
       return;
@@ -93,7 +103,11 @@ class GithubPushCommand extends Command {
 
     if (modifiedFiles.isNotEmpty) {
       // Use git diff --name-status HEAD to get modification details
-      final diffResult = await Process.run('git', ['diff', '--name-status', 'HEAD']);
+      final diffResult = await Process.run('git', [
+        'diff',
+        '--name-status',
+        'HEAD',
+      ]);
       if (diffResult.exitCode == 0) {
         final diffLines = (diffResult.stdout as String).trim().split('\n');
         for (var modFile in modifiedFiles) {
@@ -147,7 +161,8 @@ class GithubPushCommand extends Command {
       detailedDescriptions.add(desc);
     }
 
-    String autoMessage = 'Auto commit on $timestamp: ${changedFiles.length} file(s) changed: ${detailedDescriptions.join(', ')}';
+    String autoMessage =
+        'Auto commit on $timestamp: ${changedFiles.length} file(s) changed: ${detailedDescriptions.join(', ')}';
 
     // 5. Prompt for optional message
     stdout.write('Enter optional commit message (press Enter to skip): ');
@@ -174,12 +189,19 @@ class GithubPushCommand extends Command {
   }
 
   Future<bool> _isGitRepository() async {
-    final result = await Process.run('git', ['rev-parse', '--is-inside-work-tree']);
+    final result = await Process.run('git', [
+      'rev-parse',
+      '--is-inside-work-tree',
+    ]);
     return result.exitCode == 0 && (result.stdout as String).trim() == 'true';
   }
 
   Future<String?> _getCurrentBranch() async {
-    final result = await Process.run('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+    final result = await Process.run('git', [
+      'rev-parse',
+      '--abbrev-ref',
+      'HEAD',
+    ]);
     if (result.exitCode != 0) return null;
     final branch = (result.stdout as String).trim();
     return branch.isNotEmpty ? branch : null;

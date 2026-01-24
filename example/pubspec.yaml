@@ -1,0 +1,14 @@
+name: learmond_example
+publish_to: none # example is not intended to be published
+description: Example showing how to use the learmond package.
+version: 0.0.1
+
+environment:
+  sdk: '>=2.18.0 <4.0.0'
+
+dependencies:
+  learmond:
+    path: ../
+
+executables:
+  main: bin/main.dart

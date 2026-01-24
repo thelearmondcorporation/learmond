@@ -81,20 +81,45 @@ class ChangelogCommand extends Command {
     updatedChangelog.writeln(changelogEntry.toString());
     updatedChangelog.writeln(existingChangelog);
 
-    await changelogFile.writeAsString(updatedChangelog.toString());
-    print('CHANGELOG.md updated with version $newVersion');
-
-    if (await readmeFile.exists()) {
-      final readmeContent = await readmeFile.readAsString();
-      final newReadmeContent = _updateReadme(
-        readmeContent,
-        newVersion,
-        commits,
-      );
-      await readmeFile.writeAsString(newReadmeContent);
-      print('README.md updated with latest version and changelog summary');
+    // Write or update CHANGELOG.md
+    if (await changelogFile.exists()) {
+      // Prepend new entry to existing changelog
+      final existingChangelog = await changelogFile.readAsString();
+      final updatedChangelogExisting = StringBuffer();
+      updatedChangelogExisting.writeln(changelogEntry.toString());
+      updatedChangelogExisting.writeln(existingChangelog);
+      await changelogFile.writeAsString(updatedChangelogExisting.toString());
+      print('CHANGELOG.md updated with version $newVersion');
     } else {
-      print('README.md not found; skipping update.');
+      // Create a new changelog file
+      final newChangelog = StringBuffer();
+      newChangelog.writeln('# Changelog\n');
+      newChangelog.writeln(
+        'All notable changes to this project will be documented in this file.',
+      );
+      newChangelog.writeln();
+      newChangelog.writeln(changelogEntry.toString());
+      await changelogFile.writeAsString(newChangelog.toString());
+      print('CHANGELOG.md created with version $newVersion');
+    }
+
+    // Only generate README if it does not already exist. If it exists, skip modifications.
+    if (await readmeFile.exists()) {
+      print('README.md exists; skipping README generation or updates.');
+    } else {
+      // Create a minimal README with version and changelog summary
+      final changelogSummary = commits.map((c) => '- $c').join('\n');
+      final newReadmeContent =
+          '''# Project
+
+Latest Version: $newVersion
+
+## Changelog Summary
+$changelogSummary
+
+''';
+      await readmeFile.writeAsString(newReadmeContent);
+      print('README.md created with latest version and changelog summary');
     }
   }
 
@@ -106,35 +131,5 @@ class ChangelogCommand extends Command {
     final minor = int.parse(match.group(2)!);
     final patch = int.parse(match.group(3)!);
     return 'v$major.$minor.${patch + 1}';
-  }
-
-  String _updateReadme(String content, String version, List<String> commits) {
-    final versionPattern = RegExp(r'(Latest Version: )v?\d+\.\d+\.\d+');
-    final newVersionLine = 'Latest Version: $version';
-
-    String updatedContent;
-    if (versionPattern.hasMatch(content)) {
-      updatedContent = content.replaceAll(versionPattern, newVersionLine);
-    } else {
-      updatedContent = '$newVersionLine\n$content';
-    }
-
-    final changelogSummary = commits.map((c) => '- $c').join('\n');
-    final changelogMarkerStart = '';
-    final changelogMarkerEnd = '';
-    final changelogSection =
-        '$changelogMarkerStart\n$changelogSummary\n$changelogMarkerEnd';
-
-    if (updatedContent.contains(changelogMarkerStart) &&
-        updatedContent.contains(changelogMarkerEnd)) {
-      final pattern = RegExp(
-        '$changelogMarkerStart[\\s\\S]*?$changelogMarkerEnd',
-      );
-      updatedContent = updatedContent.replaceAll(pattern, changelogSection);
-    } else {
-      updatedContent = '$changelogSection\n\n$updatedContent';
-    }
-
-    return updatedContent;
   }
 }

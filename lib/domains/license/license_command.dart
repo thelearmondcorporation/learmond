@@ -2,8 +2,9 @@ import 'dart:io';
 
 class LicenseCommand {
   final String licenseType;
+  final String? author;
 
-  LicenseCommand(this.licenseType);
+  LicenseCommand(this.licenseType, [this.author]);
 
   void execute() {
     final licenseContent = _generateLicenseContent(licenseType);
@@ -12,7 +13,12 @@ class LicenseCommand {
       return;
     }
     final file = File('LICENSE');
-    file.writeAsStringSync(licenseContent);
+    final year = DateTime.now().year;
+    final owner = (author ?? '').trim();
+    final copyrightLine = owner.isEmpty
+        ? 'Copyright (c) $year'
+        : 'Copyright (c) $year $owner';
+    file.writeAsStringSync('$copyrightLine\n\n$licenseContent');
     print('LICENSE file created with $licenseType license.');
   }
 

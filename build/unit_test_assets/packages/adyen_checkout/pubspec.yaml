@@ -1,0 +1,40 @@
+name: adyen_checkout
+description: Adyen checkout library for Flutter. Accept payments with cards, wallets and local payment methods in your app using our Drop-in and Components.
+version: 1.7.0
+repository: https://github.com/Adyen/adyen-flutter
+issue_tracker: https://github.com/Adyen/adyen-flutter/issues
+documentation: https://docs.adyen.com/online-payments/build-your-integration
+
+topics:
+  - payments
+  - payment
+  - pay
+  - checkout
+  - ecommerce
+
+environment:
+  sdk: ^3.2.0
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.1.8
+  pay: ^3.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 4.0.0
+  pigeon: 21.1.0
+
+flutter:
+  assets:
+    - pubspec.yaml
+  plugin:
+    platforms:
+      android:
+        package: com.adyen.checkout.flutter
+        pluginClass: AdyenCheckoutPlugin
+      ios:
+        pluginClass: AdyenCheckoutPlugin

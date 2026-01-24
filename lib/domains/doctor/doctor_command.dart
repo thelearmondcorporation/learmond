@@ -56,12 +56,19 @@ class DoctorCommand extends Command {
     }
   }
 
-  /// Checks if GitHub CLI is authenticated
+  /// Checks if GitHub CLI is authenticated, supporting multiple accounts and keyring backends
   Future<bool> _checkGhAuth() async {
     try {
       final result = await Process.run('gh', ['auth', 'status']);
-      return result.exitCode == 0 &&
-          result.stdout.toString().contains('Logged in as');
+      if (result.exitCode != 0) {
+        return false;
+      }
+      final output = result.stdout.toString() + result.stderr.toString();
+      // Look for lines indicating logged in accounts. Support variants like:
+      // - "Logged in to github.com as <username>"
+      // - "✓ Logged in to github.com account <username> (keyring)"
+      final loggedInRegex = RegExp(r'Logged in to .*(?:as .+|account .+)');
+      return loggedInRegex.hasMatch(output);
     } catch (_) {
       return false;
     }
