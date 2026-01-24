@@ -15,7 +15,7 @@ class PodmanCommand extends Command {
     return '''
 Usage: learmond podman [options] <subcommand>
 
-${description}
+$description
 
 Options:
 ${argParser.usage}
@@ -181,7 +181,7 @@ Subcommands:
         // Sort flags to '-it' order
         flags.sort();
 
-        final flagString = '-' + flags.join('');
+        final flagString = '-${flags.join('')}';
 
         final process = await Process.start('podman', ['exec', flagString, containerId, '/bin/bash'], mode: ProcessStartMode.inheritStdio);
         final exitCode = await process.exitCode;
@@ -242,39 +242,23 @@ Subcommands:
       }
     }
 
-    final bindMount = false;
-
     final steps = <List<String>>[];
 
-    if (!bindMount) {
-      // Always rebuild
-      steps.add(['podman', 'rm', '-f', '\$(podman ps -aq)']); // Remove all containers
-      steps.add(['podman', 'rmi', '-f', image]); // Remove existing image
-      steps.add(['podman', 'build', '-t', image, '.']); // Build image
+    // Default behavior: always rebuild and run the container.
+    // The separate 'bind mount' subcommand above handles bind-mount runs.
+    steps.add(['podman', 'rm', '-f', r'$(podman ps -aq)']); // Remove all containers
+    steps.add(['podman', 'rmi', '-f', image]); // Remove existing image
+    steps.add(['podman', 'build', '-t', image, '.']); // Build image
 
-      // Run the container
-      steps.add([
-        'podman',
-        'run',
-        '-d',
-        '-p',
-        '10000:10000',
-        image
-      ]);
-    } else {
-      final currentDir = Directory.current.path;
-      // Run container with bind mount, no rebuild or remove
-      steps.add([
-        'podman',
-        'run',
-        '-d',
-        '-p',
-        '10000:10000',
-        '-v',
-        '$currentDir:/app',
-        image
-      ]);
-    }
+    // Run the container
+    steps.add([
+      'podman',
+      'run',
+      '-d',
+      '-p',
+      '10000:10000',
+      image
+    ]);
 
     for (final step in steps) {
       final process = await Process.start(step[0], step.sublist(1));
