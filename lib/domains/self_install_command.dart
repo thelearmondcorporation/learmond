@@ -105,3 +105,63 @@ class SelfInstallCommand extends Command {
     );
   }
 }
+
+class SelfReinstallCommand extends Command {
+  @override
+  final name = 'reinstall';
+
+  @override
+  final description = 'Compile the Dart CLI executable (compile-only, no install)';
+
+  @override
+  Future<void> run() async {
+    final exeName = 'learmond';
+    final exePath = '${Directory.current.path}/bin/learmond.dart';
+
+    // Determine homebrew tap path
+    final tapPath =
+        Platform.environment['LEARMOND_TAP_PATH'] ?? '${Directory.current.path}/homebrew-learmond';
+    final tapDir = Directory(tapPath);
+
+    // Remove existing global binary
+    logger.info('Removing existing global binary /usr/local/bin/$exeName (requires sudo)...');
+    try {
+      final rm = await Process.run('sudo', ['rm', '-f', '/usr/local/bin/$exeName'], runInShell: true);
+      if (rm.exitCode != 0) {
+        stderr.writeln(rm.stderr);
+      }
+    } catch (e) {
+      stderr.writeln('Failed to remove existing binary: $e');
+    }
+
+    // Remove copy in Homebrew tap if present
+    if (await tapDir.exists()) {
+      try {
+        final tapBin = File('${tapDir.path}/$exeName');
+        if (await tapBin.exists()) {
+          logger.info('Removing existing tap binary at ${tapBin.path}');
+          await tapBin.delete();
+        }
+      } catch (e) {
+        stderr.writeln('Failed to remove tap binary: $e');
+      }
+    }
+
+    // Simplified reinstall: only compile the executable as requested
+    logger.info('Compiling Dart CLI...');
+    final compile = await Process.run('dart', [
+      'compile',
+      'exe',
+      exePath,
+      '-o',
+      exeName,
+    ], runInShell: true);
+
+    if (compile.exitCode != 0) {
+      stderr.write(compile.stderr);
+      exit(compile.exitCode);
+    }
+
+    logger.success('Compiled successfully to $exeName. You can move it to /usr/local/bin if desired.');
+  }
+}

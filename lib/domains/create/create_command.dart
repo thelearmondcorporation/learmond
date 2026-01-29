@@ -27,7 +27,7 @@ class CreateCommand extends Command {
         allowed: ['flutter', 'react-native', 'ruby', 'npm'],
         defaultsTo: 'flutter',
         help:
-          'Specify the type of project to create: flutter, react-native (uses Expo, includes web), ruby, npm.',
+            'Specify the type of project to create: flutter, react-native (uses Expo, includes web), ruby, npm.',
       )
       ..addFlag(
         'cd',
@@ -84,7 +84,9 @@ class CreateCommand extends Command {
 
       // Ensure dependencies are installed (safe no-op if already done by the tool).
       print('Ensuring dependencies are installed in $name...');
-      final installResult = await Process.run('npm', ['install'], workingDirectory: name);
+      final installResult = await Process.run('npm', [
+        'install',
+      ], workingDirectory: name);
       stdout.write(installResult.stdout);
       stderr.write(installResult.stderr);
       if (installResult.exitCode != 0) {
@@ -98,7 +100,8 @@ class CreateCommand extends Command {
         if (await pkgFile.exists()) {
           final content = await pkgFile.readAsString();
           final data = jsonDecode(content) as Map<String, dynamic>;
-          final scripts = (data['scripts'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+          final scripts =
+              (data['scripts'] as Map<String, dynamic>?) ?? <String, dynamic>{};
           scripts.putIfAbsent('web', () => 'expo start --web');
           scripts.putIfAbsent('start', () => 'expo start');
           data['scripts'] = scripts;

@@ -18,39 +18,67 @@ import 'package:learmond/domains/run/run_command.dart';
 import 'package:learmond/domains/license/license_cli_command.dart';
 import 'package:learmond/domains/fix/fix_command.dart';
 
+//MACHINE COMMANDS IMPORT
+import 'package:learmond/domains/find/find_command.dart';
+import 'package:learmond/domains/open/open_command.dart';
+import 'package:learmond/domains/storage/storage_command.dart';
+import 'package:learmond/domains/grep/grep_command.dart';
+
+// NGINX COMMAND IMPORT
+import 'package:learmond/domains/nginx/nginx_command.dart';
+
+// PODMAN COMMAND IMPORT
 import 'package:learmond/domains/podman/podman_command.dart';
+
+// APP CLI COMMANDS
+import 'package:learmond/domains/app_cli/return_command.dart';
 
 void main(List<String> args) async {
   final context = Context.defaultContext();
 
   final runner = CommandRunner('learmond', 'Learmond unified CLI');
 
-  // Add commands safely
-  try {
-    runner
-      ..addCommand(RepoCommand(context))
-      ..addCommand(DoctorCommand())
-      ..addCommand(SelfInstallCommand())
-      ..addCommand(FlutterBuildCommand())
-      ..addCommand(FlutterCommand())
-      ..addCommand(CleanCommand())
-      ..addCommand(CreateCommand())
-      ..addCommand(FormatCommand())
-      ..addCommand(TestCommand())
-      ..addCommand(AnalyzeCommand())
-      ..addCommand(ChangelogCommand())
-      ..addCommand(GithubPushCommand())
-      ..addCommand(LicenseCliCommand())
-      ..addCommand(PublishCommand())
-      ..addCommand(RunCommand())
-      ..addCommand(FixCommand())
-      //PODMAN COMMANDS
-      ..addCommand(PodmanCommand());
-  } catch (e, st) {
-    print('Failed to initialize CLI commands: $e');
-    print('Did you add the new imports for the command in bin/learmond.dart?');
-    print(st);
-    exit(1);
+  // Add commands safely (skip duplicates)
+  final cmdList = <Command>[
+    RepoCommand(context),
+    DoctorCommand(),
+    SelfInstallCommand(),
+    SelfReinstallCommand(),
+    FlutterBuildCommand(),
+    FlutterCommand(),
+    CleanCommand(),
+    CreateCommand(),
+    FormatCommand(),
+    TestCommand(),
+    AnalyzeCommand(),
+    ChangelogCommand(),
+    GithubPushCommand(),
+    LicenseCliCommand(),
+    PublishCommand(),
+    RunCommand(),
+    FixCommand(),
+    PodmanCommand(),
+    FindCommand(),
+    OpenCommand(),
+    NginxCommand(),
+    StorageCommand(),
+    PrintLargestFilesCommand(),
+    ReturnCommand(),
+    GrepCommand(),
+  ];
+
+  for (final cmd in cmdList) {
+    final name = cmd.name;
+    if (runner.commands.containsKey(name)) {
+      stderr.writeln('Skipping duplicate command: $name');
+      continue;
+    }
+    try {
+      runner.addCommand(cmd);
+    } catch (e, st) {
+      stderr.writeln('Failed to add command ${name}: $e');
+      stderr.writeln(st);
+    }
   }
 
   // Run the command and handle runtime errors

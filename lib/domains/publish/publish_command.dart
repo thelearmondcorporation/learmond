@@ -29,7 +29,6 @@ class PublishCommand extends Command {
       ['learmond', 'doctor'],
       ['learmond', 'license'],
       ['learmond', 'changelog'],
-      ['learmond', 'push'],
     ];
 
     for (final step in steps) {
@@ -61,17 +60,15 @@ class PublishCommand extends Command {
     final isRuby = await _isRubyProject();
 
     if (isFlutterOrDart) {
-      final process = await Process.start('dart', [
+      final process = await Process.start('flutter', [
         'pub',
         'publish',
-        '--force',
-      ]);
-      stdout.addStream(process.stdout);
-      stderr.addStream(process.stderr);
+      ], mode: ProcessStartMode.inheritStdio);
+
       final exitCode = await process.exitCode;
       if (exitCode != 0) {
         stderr.writeln(
-          'Error: dart pub publish failed with exit code $exitCode.',
+          'Error: flutter pub publish failed with exit code $exitCode.',
         );
         exit(exitCode);
       }

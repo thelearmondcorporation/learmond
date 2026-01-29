@@ -52,14 +52,14 @@ class LicenseCliCommand extends Command {
         stdout.write('Author name (press Enter to leave blank): ');
         author = (stdin.readLineSync() ?? '').trim();
       } else {
-        // Non-interactive: default to empty author (no fallback)
+        // Non-interactive: default to empty author (no default)
         author = '';
       }
 
       final generator = license_lib.LicenseCommand(licenseType);
       generator.execute();
 
-      // Prepend copyright line based on provided author (no fallback if empty)
+      // Prepend copyright line based on provided author (no default if empty)
       try {
         final file = File('LICENSE');
         final content = await file.readAsString();

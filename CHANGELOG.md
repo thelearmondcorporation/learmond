@@ -29,6 +29,14 @@
 
 - Breaking release. Fully supports npx/npm, flutter, go and ruby apps. Run learmond <command> <app-name> --<type> to create, test, analyze/lint and run your. Git commands include learmond repo init to initialize a Git repository in your current direct and learmond push to Stage, Commit, and push changes to your newly created branch. 
 
+## 0.1.1
+
+- Breaking stable release. Fully supports npx/npm, flutter, go and ruby apps. Run learmond <command> <app-name> --<type> to create, test, analyze/lint and run your. Git commands include learmond repo init to initialize a Git repository in your current direct and learmond push to Stage, Commit, and push changes to your newly created branch. 
+- Includes machine commands, nginx commands, and podman container management commands.
+
+
+
+
 
 
 

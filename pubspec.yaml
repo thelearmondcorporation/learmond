@@ -1,6 +1,6 @@
 name: learmond
 description: The Learmond Corporation's official CLI tool. Includes learmond_flutter.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/thelearmondcorporation/learmond
 repository: https://github.com/thelearmondcorporation/learmond.git
 
