@@ -1,0 +1,11 @@
+
+
+Package: learmond
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: dart
+Maintainer: The Learmond Corporation <thelearmondcorporation@thelearmondcorporation.com>
+Description: Learmond CLI tool
+ Installs the learmond command-line tool.

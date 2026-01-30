@@ -1,0 +1,10 @@
+#!/bin/bash
+# post-install commands for the package
+
+# copy the executable from package to target location
+cp /usr/share/learmond/learmond /usr/local/bin/learmond
+
+# set executable permissions
+chmod +x /usr/local/bin/learmond
+
+exit 0
