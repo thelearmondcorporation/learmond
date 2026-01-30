@@ -167,17 +167,6 @@ class StorageCommand extends Command {
     return '${size.toStringAsFixed(size >= 10 ? 0 : 1)}${units[unitIndex]}';
   }
 
-  String _humanReadableFromBytes(int bytes) {
-    if (bytes <= 0) return '0B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    double size = bytes.toDouble();
-    var unitIndex = 0;
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex += 1;
-    }
-    return '${size.toStringAsFixed(size >= 10 ? 0 : 1)}${units[unitIndex]}';
-  }
 }
 
 // Helper function that implements the largest-files logic so multiple commands can call it.

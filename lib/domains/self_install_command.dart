@@ -98,6 +98,27 @@ class SelfInstallCommand extends Command {
           exit(1);
         }
       }
+      // Also update Chocolatey install script checksum if present
+      final chocoPath =
+          Platform.environment['LEARMOND_CHOCOLATEY_PATH'] ?? '${Directory.current.path}/packaging/chocolatey';
+      final chocoFile = File('${chocoPath}/tools/chocolateyInstall.ps1');
+      if (await chocoFile.exists()) {
+        try {
+          final lines = await chocoFile.readAsLines();
+          final updated = lines.map((line) {
+            final t = line.trimLeft();
+            if (t.startsWith(r"$checksum") || t.startsWith(r"$checksum =") || t.startsWith(r"$checksum = '")) {
+              return "\$checksum = '$sha256Hex'";
+            }
+            return line;
+          }).toList();
+          await chocoFile.writeAsString(updated.join('\n'));
+          logger.info('Updated chocolateyInstall.ps1 with new SHA256 checksum.');
+        } catch (e) {
+          stderr.writeln('Failed to update chocolateyInstall.ps1: $e');
+          exit(1);
+        }
+      }
     }
 
     logger.success(

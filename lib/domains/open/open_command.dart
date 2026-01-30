@@ -11,8 +11,7 @@ class OpenCommand extends Command {
   @override
   final description = 'Open a file in the nano editor.';
 
-  OpenCommand() {
-  }
+  OpenCommand();
 
   @override
   Future<void> run() async {

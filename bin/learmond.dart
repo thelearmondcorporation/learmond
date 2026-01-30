@@ -23,6 +23,7 @@ import 'package:learmond/domains/find/find_command.dart';
 import 'package:learmond/domains/open/open_command.dart';
 import 'package:learmond/domains/storage/storage_command.dart';
 import 'package:learmond/domains/grep/grep_command.dart';
+import 'package:learmond/domains/list/list_command.dart';
 
 // NGINX COMMAND IMPORT
 import 'package:learmond/domains/nginx/nginx_command.dart';
@@ -65,6 +66,7 @@ void main(List<String> args) async {
     PrintLargestFilesCommand(),
     ReturnCommand(),
     GrepCommand(),
+    ListCommand(),
   ];
 
   for (final cmd in cmdList) {
@@ -76,7 +78,7 @@ void main(List<String> args) async {
     try {
       runner.addCommand(cmd);
     } catch (e, st) {
-      stderr.writeln('Failed to add command ${name}: $e');
+      stderr.writeln('Failed to add command $name: $e');
       stderr.writeln(st);
     }
   }

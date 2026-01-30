@@ -24,6 +24,7 @@ ${argParser.usage}
 Subcommands:
   start       Start the Podman VM
   stop        Stop the Podman VM
+  run.        Run the Podman image
   reset       Reset the Podman VM
   clean       Clean broken Podman state (no VM init/start)
   bind mount  Run container with bind mount
@@ -408,6 +409,20 @@ Subcommands:
 
     await ensurePodmanRunning();
 
+    stdout.write('Enter container name: ');
+    final containerName = stdin.readLineSync();
+    if (containerName == null || containerName.trim().isEmpty) {
+      stderr.writeln('Error: Container name is required.');
+      exit(1);
+    }
+
+    stdout.write('Enter host port to bind (e.g. 10000): ');
+    final port = stdin.readLineSync();
+    if (port == null || port.trim().isEmpty) {
+      stderr.writeln('Error: Port is required.');
+      exit(1);
+    }
+
     final steps = <List<String>>[];
 
     // Default behavior: always rebuild and run the container.
@@ -427,10 +442,11 @@ Subcommands:
       'podman',
       'run',
       '-d',
+      '--name',
+      containerName,
+      '--restart=always',
       '-p',
-      '10000:10000',
-      '--volume',
-      '$currentDir:/app:Z',
+      '127.0.0.1:$port:$port',
       image,
     ]);
 

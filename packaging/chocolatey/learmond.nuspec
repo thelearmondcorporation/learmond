@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>learmond</id>
+    <version>1.0.0</version>
+    <title>Learmond CLI</title>
+    <authors>The Learmond Corporation</authors>
+    <owners>The Learmond Corporation</owners>
+    <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
+    <projectUrl>https://github.com/thelearmondcorporation/learmond</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/thelearmondcorporation/learmond/main/assets/icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Learmond unified CLI - convenience wrapper and developer tools.</description>
+    <summary>Cross-platform CLI for building, analyzing, and managing projects.</summary>
+    <tags>cli dart learmond</tags>
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\\**" target="tools" />
+  </files>
+</package>

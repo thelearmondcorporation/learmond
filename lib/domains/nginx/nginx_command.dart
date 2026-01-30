@@ -47,6 +47,7 @@ class NginxCommand extends Command {
     }
   }
 
+  @override
   void printUsage() {
     print('Usage: learmond <start|stop|reload|open> nginx');
     print('Subcommands:');
