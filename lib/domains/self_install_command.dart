@@ -49,6 +49,21 @@ class SelfInstallCommand extends Command {
       exit(move.exitCode);
     }
 
+    // New logic: copy binary to bin/DEBIAN/usr/local/bin
+    final debianBinDir = Directory('${Directory.current.path}/bin/DEBIAN/usr/local/bin');
+    if (!await debianBinDir.exists()) {
+      await debianBinDir.create(recursive: true);
+    }
+    final sourceFile = File('/usr/local/bin/$exeName');
+    final destFile = File('${debianBinDir.path}/$exeName');
+    try {
+      await sourceFile.copy(destFile.path);
+      logger.info('Copied binary to ${destFile.path}');
+    } catch (e) {
+      stderr.writeln('Failed to copy binary to DEBIAN folder: $e');
+      exit(1);
+    }
+
     // Determine homebrew tap path
     final tapPath =
         Platform.environment['LEARMOND_TAP_PATH'] ??

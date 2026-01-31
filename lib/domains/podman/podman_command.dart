@@ -24,12 +24,14 @@ ${argParser.usage}
 Subcommands:
   start       Start the Podman VM
   stop        Stop the Podman VM
-  run.        Run the Podman image
+  run         Run the Podman image
   reset       Reset the Podman VM
   clean       Clean broken Podman state (no VM init/start)
   bind mount  Run container with bind mount
   ps          List running containers
   exec        Open interactive bash in a container
+  storage     Show Podman storage usage
+  prune       Remove all images, containers, and volumes (dangerous!)
 ''';
   }
 
@@ -109,7 +111,75 @@ Subcommands:
     if (args.isNotEmpty) {
       final subcommand = args.first.toLowerCase();
 
-      if (subcommand == 'start') {
+      if (subcommand == 'storage') {
+        // Show Podman storage usage
+        final result = await Process.run('podman', ['system', 'df']);
+        stdout.write(result.stdout);
+        stderr.write(result.stderr);
+        exit(result.exitCode);
+      } else if (subcommand == 'prune') {
+        // Get all container IDs and stop & remove them if any exist.
+        final psResult = await Process.run('podman', ['ps', '-aq']);
+        if (psResult.exitCode != 0) {
+          stderr.write(psResult.stderr);
+          exit(psResult.exitCode);
+        }
+        final containerIds = (psResult.stdout as String)
+            .trim()
+            .split('\n')
+            .where((id) => id.trim().isNotEmpty)
+            .toList();
+        if (containerIds.isNotEmpty) {
+          // Stop all containers
+          final stopProcess = await Process.start('podman', ['stop', ...containerIds]);
+          await stopProcess.stdout.pipe(stdout);
+          await stopProcess.stderr.pipe(stderr);
+          final stopExit = await stopProcess.exitCode;
+          if (stopExit != 0) {
+            stderr.writeln('Error: podman stop failed with exit code $stopExit.');
+            exit(stopExit);
+          }
+          // Remove all containers
+          final rmProcess = await Process.start('podman', ['rm', '-f', ...containerIds]);
+          await rmProcess.stdout.pipe(stdout);
+          await rmProcess.stderr.pipe(stderr);
+          final rmExit = await rmProcess.exitCode;
+          if (rmExit != 0) {
+            stderr.writeln('Error: podman rm failed with exit code $rmExit.');
+            exit(rmExit);
+          }
+        }
+        // Get all image IDs and remove them if any exist.
+        final imagesResult = await Process.run('podman', ['images', '-q']);
+        if (imagesResult.exitCode != 0) {
+          stderr.write(imagesResult.stderr);
+          exit(imagesResult.exitCode);
+        }
+        final imageIds = (imagesResult.stdout as String)
+            .trim()
+            .split('\n')
+            .where((id) => id.trim().isNotEmpty)
+            .toList();
+        if (imageIds.isNotEmpty) {
+          final rmiProcess = await Process.start('podman', ['rmi', '-f', ...imageIds]);
+          await rmiProcess.stdout.pipe(stdout);
+          await rmiProcess.stderr.pipe(stderr);
+          final rmiExit = await rmiProcess.exitCode;
+          if (rmiExit != 0) {
+            stderr.writeln('Error: podman rmi failed with exit code $rmiExit.');
+            exit(rmiExit);
+          }
+        }
+        // Prune all remaining unused data, including volumes
+        final pruneProcess = await Process.start(
+          'podman',
+          ['system', 'prune', '-a', '-f', '--volumes'],
+        );
+        await pruneProcess.stdout.pipe(stdout);
+        await pruneProcess.stderr.pipe(stderr);
+        final exitCode = await pruneProcess.exitCode;
+        exit(exitCode);
+      } else if (subcommand == 'start') {
         final result = await Process.run('podman', [
           'machine',
           'start',
@@ -236,9 +306,6 @@ Subcommands:
           }
         }
 
-        // Stop and remove any existing containers using this image
-        await Process.run('podman', ['rm', '-f', image]);
-
         final currentDir = Directory.current.path;
 
         final process = await Process.start('podman', [
@@ -331,6 +398,42 @@ Subcommands:
           }
         }
         exit(0);
+      } else if (subcommand == 'run') {
+        // 'run' subcommand: prompt for image and port, run container without build or removal
+        String? image = argResults?['image'];
+
+        if (image == null || image.trim().isEmpty) {
+          stdout.write('Enter the Podman image name to use: ');
+          image = stdin.readLineSync();
+          if (image == null || image.trim().isEmpty) {
+            stderr.writeln('Error: No image name provided.');
+            exit(1);
+          }
+        }
+
+        final containerName = image.replaceAll(RegExp(r'[^a-zA-Z0-9_.-]'), '_');
+
+        stdout.write('Enter host port to bind (e.g. 10000): ');
+        final port = stdin.readLineSync();
+        if (port == null || port.trim().isEmpty) {
+          stderr.writeln('Error: Port is required.');
+          exit(1);
+        }
+
+        final process = await Process.start('podman', [
+          'run',
+          '-d',
+          '--name',
+          containerName,
+          '--restart=always',
+          '-p',
+          '127.0.0.1:$port:$port',
+          image,
+        ]);
+        stdout.addStream(process.stdout);
+        stderr.addStream(process.stderr);
+        final exitCode = await process.exitCode;
+        exit(exitCode);
       }
     }
 
@@ -396,8 +499,9 @@ Subcommands:
       return;
     }
 
+    // Default 'learmond podman' command:
+    // 1. Prompt for image name if not provided
     String? image = argResults?['image'];
-
     if (image == null || image.trim().isEmpty) {
       stdout.write('Enter the Podman image name to use: ');
       image = stdin.readLineSync();
@@ -407,60 +511,70 @@ Subcommands:
       }
     }
 
+    // 2. Ensure Podman VM is running
     await ensurePodmanRunning();
 
-    stdout.write('Enter container name: ');
-    final containerName = stdin.readLineSync();
-    if (containerName == null || containerName.trim().isEmpty) {
-      stderr.writeln('Error: Container name is required.');
-      exit(1);
+    // 3. Remove all existing containers
+    final psResult = await Process.run('podman', ['ps', '-aq']);
+    if (psResult.exitCode != 0) {
+      stderr.write(psResult.stderr);
+      exit(psResult.exitCode);
     }
-
-    stdout.write('Enter host port to bind (e.g. 10000): ');
-    final port = stdin.readLineSync();
-    if (port == null || port.trim().isEmpty) {
-      stderr.writeln('Error: Port is required.');
-      exit(1);
-    }
-
-    final steps = <List<String>>[];
-
-    // Default behavior: always rebuild and run the container.
-    // The separate 'bind mount' subcommand above handles bind-mount runs.
-    steps.add([
-      'podman',
-      'rm',
-      '-f',
-      r'$(podman ps -aq)',
-    ]); // Remove all containers
-    steps.add(['podman', 'rmi', '-f', image]); // Remove existing image
-    steps.add(['podman', 'build', '-t', image, '.']); // Build image
-
-    final currentDir = Directory.current.path;
-
-    steps.add([
-      'podman',
-      'run',
-      '-d',
-      '--name',
-      containerName,
-      '--restart=always',
-      '-p',
-      '127.0.0.1:$port:$port',
-      image,
-    ]);
-
-    for (final step in steps) {
-      final process = await Process.start(step[0], step.sublist(1));
-      stdout.addStream(process.stdout);
-      stderr.addStream(process.stderr);
-      final exitCode = await process.exitCode;
-      if (exitCode != 0) {
-        stderr.writeln(
-          'Error: command "${step.join(' ')}" failed with exit code $exitCode.',
-        );
-        exit(exitCode);
+    final containerIds = (psResult.stdout as String)
+        .trim()
+        .split('\n')
+        .where((id) => id.trim().isNotEmpty)
+        .toList();
+    if (containerIds.isNotEmpty) {
+      // Stop all containers
+      final stopProcess = await Process.start('podman', ['stop', ...containerIds]);
+      await stopProcess.stdout.pipe(stdout);
+      await stopProcess.stderr.pipe(stderr);
+      final stopExit = await stopProcess.exitCode;
+      if (stopExit != 0) {
+        stderr.writeln('Error: podman stop failed with exit code $stopExit.');
+        exit(stopExit);
+      }
+      // Remove all containers
+      final rmProcess = await Process.start('podman', ['rm', '-f', ...containerIds]);
+      await rmProcess.stdout.pipe(stdout);
+      await rmProcess.stderr.pipe(stderr);
+      final rmExit = await rmProcess.exitCode;
+      if (rmExit != 0) {
+        stderr.writeln('Error: podman rm failed with exit code $rmExit.');
+        exit(rmExit);
       }
     }
+
+    // 4. Remove the existing image if it exists
+    final imagesResult = await Process.run('podman', ['images', '-q', image]);
+    if (imagesResult.exitCode == 0) {
+      final imageIds = (imagesResult.stdout as String)
+          .trim()
+          .split('\n')
+          .where((id) => id.trim().isNotEmpty)
+          .toList();
+      if (imageIds.isNotEmpty) {
+        final rmiProcess = await Process.start('podman', ['rmi', '-f', image]);
+        await rmiProcess.stdout.pipe(stdout);
+        await rmiProcess.stderr.pipe(stderr);
+        final rmiExit = await rmiProcess.exitCode;
+        if (rmiExit != 0) {
+          stderr.writeln('Error: podman rmi failed with exit code $rmiExit.');
+          exit(rmiExit);
+        }
+      }
+    }
+
+    // 5. Build the new image
+    final buildProcess = await Process.start('podman', ['build', '-t', image, '.']);
+    await buildProcess.stdout.pipe(stdout);
+    await buildProcess.stderr.pipe(stderr);
+    final buildExit = await buildProcess.exitCode;
+    if (buildExit != 0) {
+      stderr.writeln('Error: podman build failed with exit code $buildExit.');
+      exit(buildExit);
+    }
+    // 6. Do not run the container and do not prompt for any ports.
   }
 }

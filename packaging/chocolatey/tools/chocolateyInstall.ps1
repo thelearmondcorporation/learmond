@@ -4,7 +4,7 @@ $toolsDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # URL to the release ZIP for Windows. Replace with your GitHub Release URL.
 $url = 'https://github.com/thelearmondcorporation/learmond/releases/download/vX.Y.Z/learmond-windows-x64.zip'
 # SHA256 checksum for the ZIP file (replace with the real hash)
-$checksum = '1f6f8bf11c43de57ef35324bbac888a698ed0990fd9555b3d70a463a939c76f7'
+$checksum = 'f7738a01096b51d6d05d01dbe29638d9d6d53f8579c9aa0a3da3e87c43bd6b9f'
 
 Write-Host "Installing $packageName from $url"
 
