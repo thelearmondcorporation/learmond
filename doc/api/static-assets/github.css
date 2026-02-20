@@ -116,3 +116,20 @@ code.hljs {
   /* purposely ignored */
   
 }
+
+/* codex-scrollbar-hide-global */
+html,
+body,
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent;
+}

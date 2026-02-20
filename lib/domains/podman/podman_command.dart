@@ -24,7 +24,10 @@ ${argParser.usage}
 Subcommands:
   start       Start the Podman VM
   stop        Stop the Podman VM
+  build compose  Build services in podman-compose.yml
   run         Run the Podman image
+  run compose Run services from podman-compose.yml
+  compose     Alias for "run compose"
   reset       Reset the Podman VM
   clean       Clean broken Podman state (no VM init/start)
   bind mount  Run container with bind mount
@@ -111,6 +114,42 @@ Subcommands:
     if (args.isNotEmpty) {
       final subcommand = args.first.toLowerCase();
 
+      if (subcommand == 'build' &&
+          args.length > 1 &&
+          args[1].toLowerCase() == 'compose') {
+        await ensurePodmanRunning();
+        final composeFile = args.length > 2 ? args[2] : 'podman-compose.yml';
+        if (!File(composeFile).existsSync()) {
+          stderr.writeln('Error: compose file not found: $composeFile');
+          exit(1);
+        }
+        final process = await Process.start('podman', [
+          'compose',
+          '-f',
+          composeFile,
+          'build',
+        ], mode: ProcessStartMode.inheritStdio);
+        final exitCode = await process.exitCode;
+        exit(exitCode);
+      } else if (subcommand == 'compose' ||
+          (subcommand == 'run' &&
+              args.length > 1 &&
+              args[1].toLowerCase() == 'compose')) {
+        final composeFile = args.length > 2 ? args[2] : 'podman-compose.yml';
+        if (!File(composeFile).existsSync()) {
+          stderr.writeln('Error: compose file not found: $composeFile');
+          exit(1);
+        }
+        final process = await Process.start('podman', [
+          'compose',
+          '-f',
+          composeFile,
+          'up',
+          '-d',
+        ], mode: ProcessStartMode.inheritStdio);
+        final exitCode = await process.exitCode;
+        exit(exitCode);
+      } else
       if (subcommand == 'storage') {
         // Show Podman storage usage
         final result = await Process.run('podman', ['system', 'df']);
@@ -295,6 +334,8 @@ Subcommands:
       } else if (subcommand == 'bind' &&
           args.length > 1 &&
           args[1].toLowerCase() == 'mount') {
+        await ensurePodmanRunning();
+
         String? image = argResults?['image'];
 
         if (image == null || image.trim().isEmpty) {
@@ -307,19 +348,25 @@ Subcommands:
         }
 
         final currentDir = Directory.current.path;
+        final containerName = '${image}_dev'
+            .replaceAll(RegExp(r'[^a-zA-Z0-9_.-]'), '_');
 
         final process = await Process.start('podman', [
           'run',
-          '--rm',
+          '-d',
+          '--replace',
           '--name',
-          image,
+          containerName,
           '-p',
-          '10000:10000',
-          '--volume',
-          '$currentDir:/app:Z',
+          '127.0.0.1:10000:10000',
+          '-v',
+          '$currentDir:/app:rw',
+          '-w',
+          '/app',
           image,
         ], mode: ProcessStartMode.inheritStdio);
-        await process.exitCode;
+        final exitCode = await process.exitCode;
+        exit(exitCode);
       } else if (subcommand == 'ps') {
         final result = await Process.run('podman', ['ps']);
         stdout.write(result.stdout);
@@ -514,67 +561,59 @@ Subcommands:
     // 2. Ensure Podman VM is running
     await ensurePodmanRunning();
 
-    // 3. Remove all existing containers
-    final psResult = await Process.run('podman', ['ps', '-aq']);
-    if (psResult.exitCode != 0) {
-      stderr.write(psResult.stderr);
-      exit(psResult.exitCode);
+    // 3. Block duplicate image names; do not delete existing images.
+    final imagesResult = await Process.run('podman', ['images', '-q', image]);
+    if (imagesResult.exitCode != 0) {
+      stderr.write(imagesResult.stderr);
+      exit(imagesResult.exitCode);
     }
-    final containerIds = (psResult.stdout as String)
+    final imageIds = (imagesResult.stdout as String)
         .trim()
         .split('\n')
         .where((id) => id.trim().isNotEmpty)
         .toList();
-    if (containerIds.isNotEmpty) {
-      // Stop all containers
-      final stopProcess = await Process.start('podman', ['stop', ...containerIds]);
-      await stopProcess.stdout.pipe(stdout);
-      await stopProcess.stderr.pipe(stderr);
-      final stopExit = await stopProcess.exitCode;
-      if (stopExit != 0) {
-        stderr.writeln('Error: podman stop failed with exit code $stopExit.');
-        exit(stopExit);
-      }
-      // Remove all containers
-      final rmProcess = await Process.start('podman', ['rm', '-f', ...containerIds]);
-      await rmProcess.stdout.pipe(stdout);
-      await rmProcess.stderr.pipe(stderr);
-      final rmExit = await rmProcess.exitCode;
-      if (rmExit != 0) {
-        stderr.writeln('Error: podman rm failed with exit code $rmExit.');
-        exit(rmExit);
-      }
+    if (imageIds.isNotEmpty) {
+      stderr.writeln('Error: image "$image" already exists. Use a new image name.');
+      exit(1);
     }
 
-    // 4. Remove the existing image if it exists
-    final imagesResult = await Process.run('podman', ['images', '-q', image]);
-    if (imagesResult.exitCode == 0) {
-      final imageIds = (imagesResult.stdout as String)
-          .trim()
-          .split('\n')
-          .where((id) => id.trim().isNotEmpty)
-          .toList();
-      if (imageIds.isNotEmpty) {
-        final rmiProcess = await Process.start('podman', ['rmi', '-f', image]);
-        await rmiProcess.stdout.pipe(stdout);
-        await rmiProcess.stderr.pipe(stderr);
-        final rmiExit = await rmiProcess.exitCode;
-        if (rmiExit != 0) {
-          stderr.writeln('Error: podman rmi failed with exit code $rmiExit.');
-          exit(rmiExit);
+    // 4. Build the new image with retries for transient failures
+    const maxBuildAttempts = 3;
+    var attempt = 0;
+    while (attempt < maxBuildAttempts) {
+      attempt += 1;
+      stdout.writeln('Building image $image (attempt $attempt/$maxBuildAttempts)...');
+      try {
+        final buildProcess = await Process.start('podman', ['build', '-t', image, '.'], runInShell: true);
+        await buildProcess.stdout.pipe(stdout);
+        await buildProcess.stderr.pipe(stderr);
+        final buildExit = await buildProcess.exitCode;
+        if (buildExit == 0) {
+          stdout.writeln('podman build succeeded.');
+          break;
+        } else {
+          stderr.writeln('podman build failed with exit code $buildExit.');
+          if (attempt >= maxBuildAttempts) {
+            stderr.writeln('Error: podman build failed after $maxBuildAttempts attempts.');
+            exit(buildExit);
+          }
+          // Wait before retrying
+          final backoff = 1 << (attempt - 1); // 1s, 2s, 4s
+          stdout.writeln('Retrying in ${backoff}s...');
+          await Future<void>.delayed(Duration(seconds: backoff));
         }
+      } catch (e) {
+        stderr.writeln('Exception while building image: $e');
+        if (attempt >= maxBuildAttempts) {
+          stderr.writeln('Error: podman build failed after $maxBuildAttempts attempts due to exception.');
+          exit(1);
+        }
+        final backoff = 1 << (attempt - 1);
+        stdout.writeln('Retrying in ${backoff}s...');
+        await Future<void>.delayed(Duration(seconds: backoff));
       }
     }
 
-    // 5. Build the new image
-    final buildProcess = await Process.start('podman', ['build', '-t', image, '.']);
-    await buildProcess.stdout.pipe(stdout);
-    await buildProcess.stderr.pipe(stderr);
-    final buildExit = await buildProcess.exitCode;
-    if (buildExit != 0) {
-      stderr.writeln('Error: podman build failed with exit code $buildExit.');
-      exit(buildExit);
-    }
     // 6. Do not run the container and do not prompt for any ports.
   }
 }

@@ -109,7 +109,22 @@ class GrepCommand extends Command {
 
     await for (final entity in root.list(recursive: true)) {
       if (entity is File) {
-        final lines = await entity.readAsLines();
+        // Skip common binary or system files that cause decoding errors
+        final name = entity.path.split(Platform.pathSeparator).last;
+        if (name == '.DS_Store') continue;
+
+        List<String> lines;
+        try {
+          lines = await entity.readAsLines();
+        } on FileSystemException catch (_) {
+          // Not a text file or unreadable - skip
+          logger.info('Skipping non-text or unreadable file: ${entity.path}');
+          continue;
+        } catch (e) {
+          logger.info('Skipping file due to error reading ${entity.path}: $e');
+          continue;
+        }
+
         for (var i = 0; i < lines.length; i++) {
           if (regex.hasMatch(lines[i])) {
             logger.info('${entity.path}:${i + 1} ${lines[i]}');

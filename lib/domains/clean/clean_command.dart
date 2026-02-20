@@ -52,12 +52,13 @@ class CleanCommand extends Command {
       '$home/.gem',
       '$home/.cagent',
       '$home/.config',
-      '$home/.vscode',
       '$home/.swiftpm',
       '$home/.codex',
       '$home/.expo',
       '$home/.pyenv',
       '$home/.cache',
+      '$home/.claude',
+      '$home/.dart-server', 
       '$home/.Trash',
       '$home/Library/Application Support/Code/User/workspaceStorage',
     ];
@@ -98,15 +99,6 @@ class CleanCommand extends Command {
             print('Failed to remove dir: $p (maybe permissions)');
           }
         }
-      }
-    }
-
-    // Optional: shutdown simulators
-    if (Platform.isMacOS &&
-        Process.runSync('xcrun', ['simctl', 'list']).exitCode == 0) {
-      print('Shutting down all simulators...');
-      if (!dryRun) {
-        Process.runSync('xcrun', ['simctl', 'shutdown', 'all']);
       }
     }
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:learmond/core/context.dart';
-import 'package:learmond/domains/repo/repo_command.dart';
+import 'package:learmond/domains/git/git_command.dart';
 import 'package:learmond/domains/doctor/doctor_command.dart';
 import 'package:learmond/domains/self_install_command.dart';
 import 'package:learmond/domains/flutter/flutter_command.dart';
@@ -17,6 +17,7 @@ import 'package:learmond/domains/publish/publish_command.dart';
 import 'package:learmond/domains/run/run_command.dart';
 import 'package:learmond/domains/license/license_cli_command.dart';
 import 'package:learmond/domains/fix/fix_command.dart';
+import 'package:learmond/domains/postgres/psql_command.dart';
 
 //MACHINE COMMANDS IMPORT
 import 'package:learmond/domains/find/find_command.dart';
@@ -34,6 +35,12 @@ import 'package:learmond/domains/podman/podman_command.dart';
 // APP CLI COMMANDS
 import 'package:learmond/domains/app_cli/return_command.dart';
 
+// SSH COMMAND
+import 'package:learmond/domains/ssh/ssh_command.dart';
+
+// LSOF COMMAND
+import 'package:learmond/domains/lsof/lsof_command.dart';
+
 void main(List<String> args) async {
   final context = Context.defaultContext();
 
@@ -41,7 +48,7 @@ void main(List<String> args) async {
 
   // Add commands safely (skip duplicates)
   final cmdList = <Command>[
-    RepoCommand(context),
+    GitCommand(context),
     DoctorCommand(),
     SelfInstallCommand(),
     SelfReinstallCommand(),
@@ -67,6 +74,9 @@ void main(List<String> args) async {
     ReturnCommand(),
     GrepCommand(),
     ListCommand(),
+    SshCommand(),
+    LsofCommand(),
+    PsqlCommand(),
   ];
 
   for (final cmd in cmdList) {

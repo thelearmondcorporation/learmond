@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:args/command_runner.dart';
 import '../../core/logger.dart';
 
@@ -7,11 +8,10 @@ class FindCommand extends Command {
   final name = 'find';
 
   @override
-  final description = 'Find files anywhere on the system by name (like: find / -name "*.conf").';
+  final description =
+      'Find files by name: quick results in current folder, then background full-system search.';
 
-  FindCommand() {
-    // No flags needed; always searches from root.
-  }
+  FindCommand();
 
   @override
   Future<void> run() async {
@@ -28,45 +28,93 @@ class FindCommand extends Command {
     if (trimmedPattern.endsWith('"') || trimmedPattern.endsWith("'")) {
       trimmedPattern = trimmedPattern.substring(0, trimmedPattern.length - 1);
     }
-    final startPaths = [
-      '/opt/homebrew/etc',
-      '/usr/local/etc',
-      '/etc',
-      '/Users'
-    ];
-
-    logger.info('Searching for "$trimmedPattern"...');
-
+    logger.info('Quick search in current folder for "$trimmedPattern"...');
     final regex = _globToRegex(trimmedPattern);
-    var found = false;
+    final found = <String>{};
+    await _quickSearchInCurrentFolder(regex, found);
 
-    for (final startPath in startPaths) {
-      logger.info('Search root: $startPath');
-      try {
-        await for (final entity in Directory(startPath).list(
-          recursive: true,
-          followLinks: false,
-        )) {
-          try {
-            final name = entity.uri.pathSegments.last;
-            if (regex.hasMatch(name)) {
-              logger.success(entity.path);
-              found = true;
-            }
-          } on FileSystemException catch (e) {
-            logger.info('Skipped unreadable file or directory: ${e.path}');
-            continue;
-          }
+    if (found.isEmpty) {
+      logger.info('No quick matches in ${Directory.current.path}.');
+    }
+
+    final logPath = await _startBackgroundSystemSearch(trimmedPattern);
+    logger.info('Background full-system search started.');
+    logger.info('Results file: $logPath');
+    logger.info('Follow results with: tail -f $logPath');
+  }
+
+  Future<void> _quickSearchInCurrentFolder(RegExp regex, Set<String> found) async {
+    final cwd = Directory.current.path;
+    final rg = Platform.isWindows ? 'rg.exe' : 'rg';
+    final rgAvailable = await _commandExists(rg);
+
+    if (rgAvailable) {
+      final p = await Process.start(
+        rg,
+        ['--files', cwd],
+        runInShell: true,
+      );
+
+      await for (final line in p.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter())) {
+        final path = line.trim();
+        if (path.isEmpty) continue;
+        final name = path.split(Platform.pathSeparator).last;
+        if (regex.hasMatch(name) && found.add(path)) {
+          logger.success(path);
         }
-      } on FileSystemException {
-        // Skip unreadable directory silently
-        continue;
       }
+      await p.exitCode;
+      return;
     }
 
-    if (!found) {
-      logger.info('No matching files found.');
+    try {
+      await for (final entity in Directory(cwd).list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        final name = entity.uri.pathSegments.isEmpty
+            ? entity.path
+            : entity.uri.pathSegments.last;
+        if (regex.hasMatch(name) && found.add(entity.path)) {
+          logger.success(entity.path);
+        }
+      }
+    } on FileSystemException {
+      // best effort only
     }
+  }
+
+  Future<String> _startBackgroundSystemSearch(String pattern) async {
+    final stamp = DateTime.now().millisecondsSinceEpoch;
+    final logPath = '/tmp/learmond_find_$stamp.log';
+    final escapedPattern = pattern.replaceAll("'", r"'\''");
+    final mdfindAvailable = await _commandExists('mdfind');
+
+    // Full system search in background with stderr suppressed to keep output clean.
+    final script = mdfindAvailable
+        ? "nohup mdfind -name '$escapedPattern' > '$logPath' 2>/dev/null &"
+        : "nohup find / -iname '$escapedPattern' 2>/dev/null > '$logPath' &";
+
+    await Process.run(
+      'sh',
+      ['-lc', script],
+      runInShell: true,
+    );
+
+    return logPath;
+  }
+
+  Future<bool> _commandExists(String command) async {
+    final checkCmd = Platform.isWindows ? 'where' : 'command';
+    final checkArgs = Platform.isWindows
+        ? [command]
+        : ['-v', command];
+    final result = await Process.run(
+      checkCmd,
+      checkArgs,
+      runInShell: true,
+    );
+    return result.exitCode == 0;
   }
 
   RegExp _globToRegex(String glob) {
