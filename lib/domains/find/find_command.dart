@@ -88,17 +88,15 @@ class FindCommand extends Command {
     final stamp = DateTime.now().millisecondsSinceEpoch;
     final logPath = '/tmp/learmond_find_$stamp.log';
     final escapedPattern = pattern.replaceAll("'", r"'\''");
-    final mdfindAvailable = await _commandExists('mdfind');
+    final hasWildcard = pattern.contains('*') || pattern.contains('?');
+    final namePattern = hasWildcard ? escapedPattern : '*$escapedPattern*';
 
-    // Full system search in background with stderr suppressed to keep output clean.
-    final script = mdfindAvailable
-        ? "nohup mdfind -name '$escapedPattern' > '$logPath' 2>/dev/null &"
-        : "nohup find / -iname '$escapedPattern' 2>/dev/null > '$logPath' &";
+    // Robust whole-machine search in the background.
+    final script = "nohup find / -iname '$namePattern' 2>/dev/null > '$logPath' &";
 
     await Process.run(
       'sh',
       ['-lc', script],
-      runInShell: true,
     );
 
     return logPath;

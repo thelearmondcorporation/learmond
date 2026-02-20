@@ -7,48 +7,48 @@ class SshCommand extends Command {
   final name = 'ssh';
 
   @override
-  final description = 'SSH helper commands';
-
-  SshCommand() {
-    addSubcommand(SshHetznerCommand());
-  }
-}
-
-class SshHetznerCommand extends Command {
-  @override
-  final name = 'hetzner';
-
-  @override
-  final description = 'SSH into a Hetzner server as root (prompts for IP if not provided)';
-
-  SshHetznerCommand();
+  final description =
+      'SSH into a host/IP, environment alias, or file-path alias. Usage: learmond ssh <host|VAR|\$VAR|path>';
 
   @override
   Future<void> run() async {
-    String ip;
-    if (argResults == null || argResults!.rest.isEmpty) {
-      stdout.write('Hetzner server IP address: ');
-      ip = stdin.readLineSync() ?? '';
+    final rest = argResults?.rest ?? const <String>[];
+
+    bool hetznerMode = false;
+    String input;
+
+    if (rest.isEmpty) {
+      stdout.write('Server host/IP, env alias, or alias file path: ');
+      input = stdin.readLineSync() ?? '';
+    } else if (rest.first == 'hetzner') {
+      hetznerMode = true;
+      if (rest.length > 1) {
+        input = rest[1];
+      } else {
+        stdout.write('Hetzner server IP, env alias, or alias file path: ');
+        input = stdin.readLineSync() ?? '';
+      }
     } else {
-      ip = argResults!.rest.first;
+      input = rest.first;
     }
 
-    ip = ip.trim();
-    if (ip.isEmpty) {
-      logger.err('IP address required');
+    final resolved = _resolveHostFromAlias(input).trim();
+    if (resolved.isEmpty) {
+      logger.err('Host/IP required');
       printUsage();
       return;
     }
 
-    logger.info('Connecting to root@$ip via learmond ssh...');
+    final target = _buildSshTarget(resolved, hetznerMode: hetznerMode);
+
+    logger.info('Connecting to $target via ssh...');
     try {
       final process = await Process.start(
-        'learmond',
-        ['ssh', 'root@$ip'],
+        'ssh',
+        [target],
+        mode: ProcessStartMode.inheritStdio,
         runInShell: true,
       );
-      await stdout.addStream(process.stdout);
-      await stderr.addStream(process.stderr);
       final code = await process.exitCode;
       if (code != 0) {
         logger.err('ssh exited with code $code');
@@ -57,5 +57,78 @@ class SshHetznerCommand extends Command {
       logger.err('Failed to run ssh: $e');
     }
   }
-}
 
+  String _resolveHostFromAlias(String rawInput) {
+    final raw = rawInput.trim();
+    if (raw.isEmpty) {
+      return '';
+    }
+
+    final envKey = raw.startsWith(r'$') ? raw.substring(1) : raw;
+    final envValue = Platform.environment[envKey];
+    if (envValue != null && envValue.trim().isNotEmpty) {
+      return envValue.trim();
+    }
+
+    final maybePath = _expandHome(raw);
+    final aliasFile = File(maybePath);
+    if (aliasFile.existsSync()) {
+      final fromFile = _readAliasFile(aliasFile);
+      if (fromFile.isNotEmpty) {
+        return fromFile;
+      }
+    }
+
+    return raw;
+  }
+
+  String _buildSshTarget(String hostOrTarget, {required bool hetznerMode}) {
+    final value = hostOrTarget.trim();
+    if (value.isEmpty) {
+      return value;
+    }
+    if (value.contains('@')) {
+      return value;
+    }
+    // Default to root login for server-style usage unless user is provided.
+    return 'root@$value';
+  }
+
+  String _expandHome(String path) {
+    if (!path.startsWith('~/')) {
+      return path;
+    }
+    final home = Platform.environment['HOME'];
+    if (home == null || home.isEmpty) {
+      return path;
+    }
+    return '$home/${path.substring(2)}';
+  }
+
+  String _readAliasFile(File file) {
+    try {
+      final lines = file.readAsLinesSync();
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) {
+          continue;
+        }
+
+        if (trimmed.contains('=')) {
+          final parts = trimmed.split('=');
+          if (parts.length >= 2) {
+            final value = parts.sublist(1).join('=').trim();
+            if (value.isNotEmpty) {
+              return value;
+            }
+          }
+        }
+
+        return trimmed;
+      }
+    } catch (_) {
+      // best effort; fall back to raw input
+    }
+    return '';
+  }
+}

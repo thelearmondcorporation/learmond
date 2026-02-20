@@ -41,8 +41,24 @@ import 'package:learmond/domains/ssh/ssh_command.dart';
 // LSOF COMMAND
 import 'package:learmond/domains/lsof/lsof_command.dart';
 
+List<String> _normalizeArgs(List<String> rawArgs) {
+  if (rawArgs.isEmpty) return rawArgs;
+  final first = rawArgs.first.trim();
+
+  // Support shorthand: `learmond ssh@alias` -> `learmond ssh alias`
+  if (first.startsWith('ssh@') && first.length > 4) {
+    final target = first.substring(4).trim();
+    if (target.isNotEmpty) {
+      return <String>['ssh', target, ...rawArgs.skip(1)];
+    }
+  }
+
+  return rawArgs;
+}
+
 void main(List<String> args) async {
   final context = Context.defaultContext();
+  final normalizedArgs = _normalizeArgs(args);
 
   final runner = CommandRunner('learmond', 'Learmond unified CLI');
 
@@ -95,7 +111,7 @@ void main(List<String> args) async {
 
   // Run the command and handle runtime errors
   try {
-    await runner.run(args);
+    await runner.run(normalizedArgs);
   } on UsageException catch (e) {
     print(e.message);
     print(e.usage);

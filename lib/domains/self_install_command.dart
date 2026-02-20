@@ -28,18 +28,10 @@ class SelfInstallCommand extends Command {
       exit(pubGet.exitCode);
     }
 
-    logger.info('Compiling Learmond CLI with Flutter...');
-    final compile = await Process.run(
-      'flutter',
-      [
-        'dart',
-        'compile',
-        'exe',
-        exePath,
-        '-o',
-        exeName,
-      ],
-      runInShell: true,
+    logger.info('Compiling Learmond CLI executable...');
+    final compile = await _compileCliExecutable(
+      exePath: exePath,
+      exeName: exeName,
     );
 
     if (compile.exitCode != 0) {
@@ -257,6 +249,35 @@ class _InstallTarget {
   });
 }
 
+Future<ProcessResult> _compileCliExecutable({
+  required String exePath,
+  required String exeName,
+}) async {
+  final dartCompile = await Process.run(
+    'dart',
+    ['compile', 'exe', exePath, '-o', exeName],
+    runInShell: true,
+  );
+
+  if (dartCompile.exitCode == 0) {
+    return dartCompile;
+  }
+
+  final stderrText = '${dartCompile.stderr}'.toLowerCase();
+  final missingDart = dartCompile.exitCode == 127 ||
+      stderrText.contains('command not found') ||
+      stderrText.contains('is not recognized');
+  if (!missingDart) {
+    return dartCompile;
+  }
+
+  return Process.run(
+    'flutter',
+    ['dart', 'compile', 'exe', exePath, '-o', exeName],
+    runInShell: true,
+  );
+}
+
 class SelfReinstallCommand extends Command {
   @override
   final name = 'reinstall';
@@ -310,18 +331,10 @@ class SelfReinstallCommand extends Command {
       exit(pubGet.exitCode);
     }
 
-    logger.info('Compiling Learmond CLI with Flutter...');
-    final compile = await Process.run(
-      'flutter',
-      [
-        'dart',
-        'compile',
-        'exe',
-        exePath,
-        '-o',
-        exeName,
-      ],
-      runInShell: true,
+    logger.info('Compiling Learmond CLI executable...');
+    final compile = await _compileCliExecutable(
+      exePath: exePath,
+      exeName: exeName,
     );
 
     if (compile.exitCode != 0) {
