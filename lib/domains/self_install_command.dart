@@ -16,12 +16,8 @@ class SelfInstallCommand extends Command {
     final exeName = Platform.isWindows ? 'learmond.exe' : 'learmond';
     final exePath = '${Directory.current.path}/bin/learmond.dart';
 
-    logger.info('Running flutter pub get...');
-    final pubGet = await Process.run(
-      'flutter',
-      ['pub', 'get'],
-      runInShell: true,
-    );
+    logger.info('Running pub get...');
+    final pubGet = await _runPubGet();
 
     if (pubGet.exitCode != 0) {
       stderr.write(pubGet.stderr);
@@ -253,29 +249,68 @@ Future<ProcessResult> _compileCliExecutable({
   required String exePath,
   required String exeName,
 }) async {
-  final dartCompile = await Process.run(
+  final compileArgs = ['compile', 'exe', exePath, '-o', exeName];
+  final candidates = <String>[
     'dart',
-    ['compile', 'exe', exePath, '-o', exeName],
-    runInShell: true,
-  );
+    '/opt/flutter/bin/dart',
+    '/opt/flutter/bin/cache/dart-sdk/bin/dart',
+  ];
 
-  if (dartCompile.exitCode == 0) {
-    return dartCompile;
+  ProcessResult? firstFailure;
+  for (final bin in candidates) {
+    final res = await Process.run(
+      bin,
+      compileArgs,
+      runInShell: true,
+    );
+    if (res.exitCode == 0) {
+      return res;
+    }
+    firstFailure ??= res;
   }
 
-  final stderrText = '${dartCompile.stderr}'.toLowerCase();
-  final missingDart = dartCompile.exitCode == 127 ||
+  return firstFailure ??
+      ProcessResult(
+        0,
+        1,
+        '',
+        'Unable to run dart compile exe.',
+      );
+}
+
+Future<ProcessResult> _runPubGet() async {
+  final dartPub = await Process.run(
+    'dart',
+    ['pub', 'get'],
+    runInShell: true,
+  );
+  if (dartPub.exitCode == 0) {
+    return dartPub;
+  }
+
+  final stderrText = '${dartPub.stderr}'.toLowerCase();
+  final missingDart = dartPub.exitCode == 127 ||
       stderrText.contains('command not found') ||
       stderrText.contains('is not recognized');
   if (!missingDart) {
-    return dartCompile;
+    return dartPub;
   }
 
-  return Process.run(
+  final flutterPub = await Process.run(
     'flutter',
-    ['dart', 'compile', 'exe', exePath, '-o', exeName],
+    ['pub', 'get'],
     runInShell: true,
   );
+  if (flutterPub.exitCode == 0) {
+    return flutterPub;
+  }
+
+  final flutterDartPub = await Process.run(
+    '/opt/flutter/bin/dart',
+    ['pub', 'get'],
+    runInShell: true,
+  );
+  return flutterDartPub.exitCode == 0 ? flutterDartPub : flutterPub;
 }
 
 class SelfReinstallCommand extends Command {
@@ -320,12 +355,8 @@ class SelfReinstallCommand extends Command {
     }
 
     // Simplified reinstall: only compile the executable as requested
-    logger.info('Running flutter pub get...');
-    final pubGet = await Process.run(
-      'flutter',
-      ['pub', 'get'],
-      runInShell: true,
-    );
+    logger.info('Running pub get...');
+    final pubGet = await _runPubGet();
     if (pubGet.exitCode != 0) {
       stderr.write(pubGet.stderr);
       exit(pubGet.exitCode);
